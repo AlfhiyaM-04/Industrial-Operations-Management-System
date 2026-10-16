@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Charts{% endblock %}
+{% block page_title %}Charts & Analytics{% endblock %}
+
+{% block content %}
+{% if labels %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px">
+  <div class="panel">
+    <div class="panel-title">
+      <span class="dot" style="background:var(--accent3)"></span>
+      Income vs Expense
+    </div>
+    <div class="chart-box"><canvas id="barChart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">
+      <span class="dot" style="background:var(--accent2)"></span>
+      Profit / Loss Trend
+    </div>
+    <div class="chart-box"><canvas id="lineChart"></canvas></div>
+  </div>
+</div>
+<div class="panel">
+  <div class="panel-title">
+    <span class="dot" style="background:#7c6af7"></span>
+    Income vs Expense — Area View
+  </div>
+  <div class="chart-box" style="height:220px"><canvas id="areaChart"></canvas></div>
+</div>
+{% else %}
+<div class="panel">
+  <div class="empty">
+    <div class="icon">📈</div>
+    <p>No data for {{ year }}. <a href="/add-entry" style="color:var(--accent)">Add entries to see charts!</a></p>
+  </div>
+</div>
+{% endif %}
+
+<script>
+const labels   = {{ labels|tojson }};
+const incomes  = {{ incomes|tojson }};
+const expenses = {{ expenses|tojson }};
+const pls      = {{ pls|tojson }};
+const opts     = { color:'#6b6b8a', font:{family:'DM Mono',size:11} };
+const gridColor = 'rgba(255,255,255,0.04)';
+
+{% if labels %}
+// Bar Chart
+new Chart(document.getElementById('barChart'), {
+  type:'bar',
+  data:{ labels, datasets:[
+    { label:'Income',  data:incomes,  backgroundColor:'rgba(0,229,160,0.7)', borderRadius:5 },
+    { label:'Expense', data:expenses, backgroundColor:'rgba(255,77,109,0.7)', borderRadius:5 }
+  ]},
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:opts }},
+    scales:{ x:{ticks:opts,grid:{color:gridColor}},
+             y:{ticks:{...opts,callback:v=>'₹'+(v/1000).toFixed(0)+'k'},grid:{color:gridColor}} }
+  }
+});
+
+// Line Chart
+new Chart(document.getElementById('lineChart'), {
+  type:'line',
+  data:{ labels, datasets:[{
+    label:'Profit/Loss', data:pls,
+    borderColor:'#00e5a0', backgroundColor:'rgba(0,229,160,0.06)',
+    pointBackgroundColor: pls.map(v=>v>=0?'#00e5a0':'#ff4d6d'),
+    borderWidth:2, pointRadius:5, tension:0.3, fill:true,
+    segment:{ borderColor:ctx=>ctx.p0.parsed.y>=0?'#00e5a0':'#ff4d6d' }
+  }]},
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:opts }},
+    scales:{ x:{ticks:opts,grid:{color:gridColor}},
+             y:{ticks:{...opts,callback:v=>'₹'+(v/1000).toFixed(0)+'k'},grid:{color:gridColor}} }
+  }
+});
+
+// Area Chart
+new Chart(document.getElementById('areaChart'), {
+  type:'line',
+  data:{ labels, datasets:[
+    { label:'Income', data:incomes, borderColor:'#00e5a0', backgroundColor:'rgba(0,229,160,0.1)', fill:true, tension:0.3, borderWidth:2, pointRadius:4 },
+    { label:'Expense', data:expenses, borderColor:'#ff4d6d', backgroundColor:'rgba(255,77,109,0.1)', fill:true, tension:0.3, borderWidth:2, pointRadius:4 }
+  ]},
+  options:{ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:opts }},
+    scales:{ x:{ticks:opts,grid:{color:gridColor}},
+             y:{ticks:{...opts,callback:v=>'₹'+(v/1000).toFixed(0)+'k'},grid:{color:gridColor}} }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

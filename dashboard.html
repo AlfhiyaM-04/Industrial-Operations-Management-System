@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="cards-grid">
+  <div class="card green">
+    <div class="card-label">Total Income</div>
+    <div class="card-value green">₹{{ "{:,.0f}".format(total_income) }}</div>
+    <div class="card-sub">{{ year }} — all months</div>
+  </div>
+  <div class="card red">
+    <div class="card-label">Total Expense</div>
+    <div class="card-value red">₹{{ "{:,.0f}".format(total_expense) }}</div>
+    <div class="card-sub">{{ year }} — all months</div>
+  </div>
+  <div class="card yellow">
+    <div class="card-label">Net Result</div>
+    <div class="card-value {{ 'green' if net >= 0 else 'red' }}">
+      {{ '+' if net >= 0 else '-' }}₹{{ "{:,.0f}".format(net|abs) }}
+    </div>
+    <div class="card-sub">{{ '🟢 Overall Profit' if net >= 0 else '🔴 Overall Loss' }}</div>
+  </div>
+  <div class="card purple">
+    <div class="card-label">Months Recorded</div>
+    <div class="card-value purple">{{ months }}</div>
+    <div class="card-sub">{{ profit_months }} profitable · {{ loss_months }} loss</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">
+    <span class="dot" style="background:var(--accent)"></span>
+    Quick Actions
+  </div>
+  <div style="display:flex; gap:12px; flex-wrap:wrap;">
+    <a href="/add-entry" class="btn btn-primary" style="text-decoration:none">➕ Add New Entry</a>
+    <a href="/records?year={{ year }}" class="btn" style="background:var(--card);border:1px solid var(--border);color:var(--text);text-decoration:none">📋 View Records</a>
+    <a href="/charts?year={{ year }}" class="btn" style="background:var(--card);border:1px solid var(--border);color:var(--text);text-decoration:none">📈 View Charts</a>
+    <a href="/reports?year={{ year }}" class="btn" style="background:var(--card);border:1px solid var(--border);color:var(--text);text-decoration:none">📄 View Reports</a>
+  </div>
+</div>
+
+{% if months == 0 %}
+<div class="panel">
+  <div class="empty">
+    <div class="icon">📊</div>
+    <p>No data for {{ year }}. <a href="/add-entry" style="color:var(--accent)">Add your first entry!</a></p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

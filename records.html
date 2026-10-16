@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Records{% endblock %}
+{% block page_title %}Monthly Records{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-title" style="justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:9px">
+      <span class="dot" style="background:#7c6af7"></span>
+      Records for {{ year }}
+    </div>
+    <a href="/add-entry" class="btn btn-primary" style="text-decoration:none;font-size:12px;padding:8px 16px">➕ Add Entry</a>
+  </div>
+
+  {% if entries %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Month</th>
+          <th>Year</th>
+          <th>Income (₹)</th>
+          <th>Expense (₹)</th>
+          <th>Profit / Loss</th>
+          <th>Status</th>
+          <th>Note</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td style="color:var(--muted)">{{ loop.index }}</td>
+          <td>{{ e.month }}</td>
+          <td>{{ e.year }}</td>
+          <td style="color:var(--accent)">₹{{ "{:,.0f}".format(e.income) }}</td>
+          <td style="color:var(--accent2)">₹{{ "{:,.0f}".format(e.expense) }}</td>
+          <td style="color:{{ 'var(--accent)' if e.profit_loss >= 0 else 'var(--accent2)' }};font-weight:600">
+            {{ '+' if e.profit_loss >= 0 else '-' }}₹{{ "{:,.0f}".format(e.profit_loss|abs) }}
+          </td>
+          <td>
+            <span class="badge badge-{{ 'profit' if e.profit_loss >= 0 else 'loss' }}">
+              {{ 'PROFIT' if e.profit_loss >= 0 else 'LOSS' }}
+            </span>
+          </td>
+          <td style="color:var(--muted);font-size:11px">{{ e.note or '—' }}</td>
+          <td>
+            <a href="/delete/{{ e.id }}" class="btn btn-danger"
+               onclick="return confirm('Delete {{ e.month }} {{ e.year }} entry?')">✕</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="icon">📋</div>
+    <p>No records for {{ year }}. <a href="/add-entry" style="color:var(--accent)">Add your first entry!</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

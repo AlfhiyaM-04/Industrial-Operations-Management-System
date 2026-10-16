@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinTrack — {% block title %}{% endblock %}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+  :root {
+    --bg:#0a0a0f; --surface:#12121a; --card:#1a1a26; --border:#2a2a3a;
+    --accent:#00e5a0; --accent2:#ff4d6d; --accent3:#ffd60a;
+    --text:#f0f0f8; --muted:#6b6b8a; --sidebar:180px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Mono',monospace; background:var(--bg); color:var(--text); display:flex; min-height:100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar); background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+    position:fixed; top:0; left:0; height:100vh;
+    z-index:100; padding:24px 0;
+  }
+  .sidebar-logo {
+    font-family:'Syne',sans-serif; font-size:22px; font-weight:800;
+    padding:0 20px 28px; border-bottom:1px solid var(--border);
+    margin-bottom:20px;
+  }
+  .sidebar-logo span { color:var(--accent); }
+  .nav-item {
+    display:flex; align-items:center; gap:10px;
+    padding:12px 20px; color:var(--muted);
+    text-decoration:none; font-size:13px;
+    transition:all 0.2s; border-left:2px solid transparent;
+  }
+  .nav-item:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+  .nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(0,229,160,0.05); }
+  .nav-icon { font-size:16px; width:20px; text-align:center; }
+  .sidebar-bottom { margin-top:auto; padding:20px; border-top:1px solid var(--border); }
+  .user-info { font-size:11px; color:var(--muted); margin-bottom:12px; line-height:1.6; }
+  .user-info strong { color:var(--text); display:block; font-size:13px; }
+  .logout-btn {
+    display:block; width:100%; padding:9px;
+    background:transparent; border:1px solid var(--border);
+    color:var(--muted); border-radius:7px;
+    font-family:'DM Mono',monospace; font-size:12px;
+    cursor:pointer; text-align:center; text-decoration:none;
+    transition:all 0.2s;
+  }
+  .logout-btn:hover { border-color:var(--accent2); color:var(--accent2); }
+
+  /* MAIN */
+  .main { margin-left:var(--sidebar); flex:1; display:flex; flex-direction:column; }
+
+  /* TOPBAR */
+  .topbar {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:16px 32px; display:flex; align-items:center;
+    justify-content:space-between; position:sticky; top:0; z-index:50;
+  }
+  .page-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; }
+  .year-select {
+    background:var(--card); border:1px solid var(--border);
+    color:var(--accent); padding:7px 14px; border-radius:50px;
+    font-family:'DM Mono',monospace; font-size:12px;
+    cursor:pointer; outline:none;
+  }
+  .year-select option { background:var(--card); color:var(--text); }
+
+  /* CONTENT */
+  .content { padding:32px; flex:1; }
+  body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(0,229,160,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.02) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
+  .content { position:relative; z-index:1; }
+
+  /* CARDS */
+  .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:32px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; position:relative; overflow:hidden; transition:transform 0.2s; }
+  .card:hover { transform:translateY(-2px); }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+  .card.green::before { background:var(--accent); }
+  .card.red::before { background:var(--accent2); }
+  .card.yellow::before { background:var(--accent3); }
+  .card.purple::before { background:#7c6af7; }
+  .card-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .card-value { font-family:'Syne',sans-serif; font-size:26px; font-weight:700; }
+  .card-value.green { color:var(--accent); }
+  .card-value.red { color:var(--accent2); }
+  .card-value.yellow { color:var(--accent3); }
+  .card-value.purple { color:#7c6af7; }
+  .card-sub { font-size:11px; color:var(--muted); margin-top:6px; }
+
+  /* PANEL */
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:26px; margin-bottom:24px; }
+  .panel-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:22px; display:flex; align-items:center; gap:9px; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+
+  /* FORM */
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .form-group { display:flex; flex-direction:column; gap:6px; }
+  label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+  input, select, textarea {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:11px 13px; color:var(--text);
+    font-family:'DM Mono',monospace; font-size:13px;
+    outline:none; transition:border-color 0.2s; width:100%;
+  }
+  input:focus, select:focus { border-color:var(--accent); }
+  select option { background:var(--surface); }
+  .btn { padding:12px 24px; border:none; border-radius:8px; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; cursor:pointer; letter-spacing:1px; transition:all 0.2s; }
+  .btn-primary { background:var(--accent); color:#000; }
+  .btn-primary:hover { background:#00ffb3; transform:translateY(-1px); }
+  .btn-danger { background:transparent; color:var(--accent2); border:1px solid var(--accent2); font-size:11px; padding:6px 12px; font-family:'DM Mono',monospace; }
+  .btn-danger:hover { background:var(--accent2); color:#fff; }
+
+  /* TABLE */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  thead tr { border-bottom:1px solid var(--border); }
+  th { text-align:left; padding:9px 12px; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); font-weight:400; }
+  td { padding:12px; border-bottom:1px solid rgba(255,255,255,0.04); }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+  .badge { display:inline-block; padding:3px 10px; border-radius:50px; font-size:10px; font-weight:600; letter-spacing:1px; }
+  .badge-profit { background:rgba(0,229,160,0.15); color:var(--accent); }
+  .badge-loss { background:rgba(255,77,109,0.15); color:var(--accent2); }
+
+  /* ALERTS */
+  .alert { padding:12px 16px; border-radius:8px; font-size:12px; margin-bottom:20px; }
+  .alert-success { background:rgba(0,229,160,0.12); color:var(--accent); border:1px solid rgba(0,229,160,0.3); }
+  .alert-error { background:rgba(255,77,109,0.12); color:var(--accent2); border:1px solid rgba(255,77,109,0.3); }
+
+  /* CHART */
+  .chart-box { position:relative; height:280px; }
+
+  /* EMPTY */
+  .empty { text-align:center; padding:40px; color:var(--muted); }
+  .empty .icon { font-size:40px; margin-bottom:12px; }
+
+  /* RESPONSIVE */
+  @media(max-width:768px) {
+    .sidebar { width:60px; }
+    .sidebar-logo, .nav-item span, .user-info, .logout-btn { display:none; }
+    .nav-item { justify-content:center; padding:14px; }
+    .main { margin-left:60px; }
+    .form-grid { grid-template-columns:1fr; }
+    .cards-grid { grid-template-columns:1fr 1fr; }
+    .content { padding:20px; }
+  }
+</style>
+{% block extra_style %}{% endblock %}
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">Fin<span>Track</span></div>
+  <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+    <span class="nav-icon">📊</span><span>Dashboard</span>
+  </a>
+  <a href="/add-entry" class="nav-item {% if request.path == '/add-entry' %}active{% endif %}">
+    <span class="nav-icon">➕</span><span>Add Entry</span>
+  </a>
+  <a href="/records" class="nav-item {% if request.path == '/records' %}active{% endif %}">
+    <span class="nav-icon">📋</span><span>Records</span>
+  </a>
+  <a href="/charts" class="nav-item {% if request.path == '/charts' %}active{% endif %}">
+    <span class="nav-icon">📈</span><span>Charts</span>
+  </a>
+  <a href="/reports" class="nav-item {% if request.path == '/reports' %}active{% endif %}">
+    <span class="nav-icon">📄</span><span>Reports</span>
+  </a>
+  <div class="sidebar-bottom">
+    <div class="user-info">
+      <strong>{{ username }}</strong>
+      {{ company }}
+    </div>
+    <a href="/logout" class="logout-btn">Logout ↗</a>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title">{% block page_title %}{% endblock %}</div>
+    <form method="GET" style="display:inline">
+      <select class="year-select" name="year" onchange="this.form.submit()">
+        {% for y in ['2024','2025','2026'] %}
+        <option value="{{ y }}" {% if y == year|default('2025') %}selected{% endif %}>📅 {{ y }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+</body>
+</html>

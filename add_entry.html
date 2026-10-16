@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Add Entry{% endblock %}
+{% block page_title %}Add Monthly Entry{% endblock %}
+
+{% block content %}
+{% if success %}<div class="alert alert-success">✅ {{ success }}</div>{% endif %}
+{% if error %}<div class="alert alert-error">⚠️ {{ error }}</div>{% endif %}
+
+<div class="panel" style="max-width:600px">
+  <div class="panel-title">
+    <span class="dot" style="background:var(--accent)"></span>
+    Monthly Income & Expense
+  </div>
+  <form method="POST">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Month</label>
+        <select name="month" required>
+          {% for m in ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
+          <option value="{{ m }}">{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Year</label>
+        <select name="year" required>
+          <option value="2024">2024</option>
+          <option value="2025" selected>2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Total Income (₹)</label>
+        <input type="number" name="income" placeholder="e.g. 500000" min="0" step="0.01" required>
+      </div>
+      <div class="form-group">
+        <label>Total Expense (₹)</label>
+        <input type="number" name="expense" placeholder="e.g. 320000" min="0" step="0.01" required>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Note (Optional)</label>
+      <input type="text" name="note" placeholder="e.g. Festival season, new product launch...">
+    </div>
+
+    <!-- Live Preview -->
+    <div id="preview" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;display:none">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Live Preview</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div><div style="font-size:10px;color:var(--muted)">Income</div><div id="prev-income" style="color:var(--accent);font-weight:600">—</div></div>
+        <div><div style="font-size:10px;color:var(--muted)">Expense</div><div id="prev-expense" style="color:var(--accent2);font-weight:600">—</div></div>
+        <div><div style="font-size:10px;color:var(--muted)">Result</div><div id="prev-result" style="font-weight:600">—</div></div>
+        <div><div style="font-size:10px;color:var(--muted)">Status</div><div id="prev-status">—</div></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" type="submit">➕ Add Entry</button>
+  </form>
+</div>
+
+<script>
+  function fmt(n) { return '₹' + Math.abs(n).toLocaleString('en-IN'); }
+  const incInput = document.querySelector('[name=income]');
+  const expInput = document.querySelector('[name=expense]');
+  function updatePreview() {
+    const inc = parseFloat(incInput.value) || 0;
+    const exp = parseFloat(expInput.value) || 0;
+    if (!inc && !exp) { document.getElementById('preview').style.display='none'; return; }
+    document.getElementById('preview').style.display='block';
+    const pl = inc - exp;
+    document.getElementById('prev-income').textContent   = fmt(inc);
+    document.getElementById('prev-expense').textContent  = fmt(exp);
+    document.getElementById('prev-result').textContent   = (pl>=0?'+':'-') + fmt(pl);
+    document.getElementById('prev-result').style.color   = pl>=0?'var(--accent)':'var(--accent2)';
+    document.getElementById('prev-status').innerHTML     = pl>=0
+      ? '<span class="badge badge-profit">PROFIT</span>'
+      : '<span class="badge badge-loss">LOSS</span>';
+  }
+  incInput.addEventListener('input', updatePreview);
+  expInput.addEventListener('input', updatePreview);
+</script>
+{% endblock %}
